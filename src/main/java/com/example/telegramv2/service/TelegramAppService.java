@@ -11,6 +11,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Location;
@@ -27,13 +28,16 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 public class TelegramAppService {
 
+    @Value("${telegram.user.loc}")
+    private String loc;
+
     @Autowired
     private RestRepo restRepo;
 
     public List<Restaurant> nearYour(User user) throws IOException {
         double latitude = user.getLatitude();
         double longitude = user.getLongitude();
-        Document doc = Jsoup.connect("https://yandex.by/maps/155/gomel/search/Где%20поесть/?ll=" + longitude + "%2C" + latitude +
+        Document doc = Jsoup.connect("https://yandex.by/maps/" + loc + "/search/Где%20поесть/?ll=" + longitude + "%2C" + latitude +
                 "&sll=" + longitude + "%2C" + latitude + "&z=15")
                 .userAgent("Chrome/90.0.4430.212")
                 .referrer("https://www.google.com/")
@@ -62,7 +66,7 @@ public class TelegramAppService {
         double latitude = user.getLatitude();
         double longitude = user.getLongitude();
         for (Restaurant restaurant : restaurants) {
-            Document document = Jsoup.connect("https://yandex.by/maps/155/gomel/?ll=" + latitude +
+            Document document = Jsoup.connect("https://yandex.by/maps/?ll=" + latitude +
                     "%2C" + longitude + "&mode=routes&rtext=" + latitude + "%2C" + longitude + "~"
                     + restaurant.getAddress() + "&z=17")
                     .userAgent("Chrome/90.0.4430.212")
@@ -108,7 +112,7 @@ public class TelegramAppService {
             preAdress.append(s + "+");
         }
         send.setChatId(user.getTelegramChatId());
-        String url = "https://yandex.by/maps/155/gomel/?ll=" + longitude  + "%2C" + latitude +
+        String url = "https://yandex.by/maps/?ll=" + longitude  + "%2C" + latitude +
                 "&mode=routes&rtext=" + latitude + "%2C" + longitude + "~" + preAdress + "&rtt=auto&ruri=~&z=17";
         send.setText(
                 "Название: " +  rest.getName() + "\n" +
