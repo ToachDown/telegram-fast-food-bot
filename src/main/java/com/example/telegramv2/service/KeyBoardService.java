@@ -13,7 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 public class KeyBoardService {
 
-    public ReplyKeyboardMarkup startPosition(){
+    public ReplyKeyboardMarkup createBeginButtonGetLocation(){
         ReplyKeyboardMarkup replyKeyboardMarkup = initialize();
         List<KeyboardRow> keyboard = new ArrayList<>();
         KeyboardRow keyboardRow = new KeyboardRow();
@@ -26,7 +26,7 @@ public class KeyBoardService {
         return replyKeyboardMarkup;
     }
 
-    public ReplyKeyboardMarkup startSearch(){
+    public ReplyKeyboardMarkup createSkipButton(){
         ReplyKeyboardMarkup replyKeyboardMarkup = initialize();
         List<KeyboardRow> keyboard = new ArrayList<>();
         KeyboardRow keyboardRow = new KeyboardRow();
@@ -38,7 +38,7 @@ public class KeyBoardService {
         return replyKeyboardMarkup;
     }
 
-    public ReplyKeyboardMarkup CreateButton(){
+    public ReplyKeyboardMarkup CreateSelectionButtons(){
         ReplyKeyboardMarkup replyKeyboardMarkup = initialize();
 
         List<KeyboardRow> keyboard = new ArrayList<>();
@@ -79,6 +79,7 @@ public class KeyBoardService {
     }
 
     private ReplyKeyboardMarkup initialize(){
+
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
         replyKeyboardMarkup.setSelective(true);
         replyKeyboardMarkup.setResizeKeyboard(true);

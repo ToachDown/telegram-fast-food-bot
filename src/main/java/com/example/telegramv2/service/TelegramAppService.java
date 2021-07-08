@@ -28,23 +28,24 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 public class TelegramAppService {
 
-    @Value("${telegram.user.loc}")
-    private String loc;
+    @Value("${telegram.user.location}")
+    private String location;
 
     @Autowired
     private RestRepo restRepo;
 
-    public List<Restaurant> nearYour(User user) throws IOException {
-        double latitude = user.getLatitude();
-        double longitude = user.getLongitude();
-        Document doc = Jsoup.connect("https://yandex.by/maps/" + loc + "/search/Где%20поесть/?ll=" + longitude + "%2C" + latitude +
-                "&sll=" + longitude + "%2C" + latitude + "&z=15")
+    public List<Restaurant> findRestaurantNearYour(User user) throws IOException {
+
+        Document doc = Jsoup.connect("https://yandex.by/maps/" + location + "/search/Где%20поесть/?ll=" +
+                user.getLongitude() + "%2C" + user.getLatitude() +
+                "&sll=" + user.getLongitude() + "%2C" + user.getLatitude() + "&z=15")
                 .userAgent("Chrome/90.0.4430.212")
                 .referrer("https://www.google.com/")
                 .get();
-        Elements listName = doc.select("div.search-business-snippet-view");
+
+        Elements listHtmlRestaurants = doc.select("div.search-business-snippet-view");
         List<Restaurant> restaurants = new ArrayList<>();
-        for (Element element : listName) {
+        for (Element element : listHtmlRestaurants) {
             restaurants.add(new Restaurant(
                     element.select("div.search-business-snippet-view__address").text(),
                     element.select("div.search-business-snippet-view__head")
@@ -58,16 +59,17 @@ public class TelegramAppService {
                     user
             ));
         }
+
         restRepo.saveAll(restaurants);
         return restaurants;
     }
 
-    public Restaurant findNearRestaurant(List<Restaurant> restaurants, User user) throws IOException {
-        double latitude = user.getLatitude();
-        double longitude = user.getLongitude();
+    private Restaurant searchForTheNearestRestaurant(List<Restaurant> restaurants, User user) throws IOException {
+
         for (Restaurant restaurant : restaurants) {
-            Document document = Jsoup.connect("https://yandex.by/maps/?ll=" + latitude +
-                    "%2C" + longitude + "&mode=routes&rtext=" + latitude + "%2C" + longitude + "~"
+
+            Document document = Jsoup.connect("https://yandex.by/maps/?ll=" + user.getLatitude() +
+                    "%2C" + user.getLongitude() + "&mode=routes&rtext=" + user.getLatitude() + "%2C" + user.getLongitude() + "~"
                     + restaurant.getAddress() + "&z=17")
                     .userAgent("Chrome/90.0.4430.212")
                     .referrer("https://www.google.com/")
@@ -81,39 +83,50 @@ public class TelegramAppService {
                 restaurant.setRoute(Integer.parseInt(routes.get(0)));
             }
         }
+
         Restaurant rest = restaurants.get(0);
         for (Restaurant restaurant : restaurants) {
             if(rest.getRoute() > restaurant.getRoute()){
                 rest = restaurant;
             }
         }
+
         return rest;
     }
 
     public User clearUser(User user){
+
         user.setSteps(1);
         user.setLongitude(0);
         user.setLatitude(0);
         user.setRestaurantList(null);
+
         return user;
     }
 
-    public SendMessage filterNearRes(User user, String filter) throws IOException {
-        SendMessage send = new SendMessage();
-        double latitude = user.getLatitude();
-        double longitude = user.getLongitude();
+    private List<Restaurant> filteringRestaurants(User user,String filter){
         List<Restaurant> filterRests = user.getRestaurantList().stream()
                 .filter(x -> x.getCategories().toLowerCase().contains(filter.toLowerCase()))
                 .collect(Collectors.toList());
-        Restaurant rest = findNearRestaurant(filterRests, user);
+        return filterRests;
+    }
+
+    public SendMessage sendResultRestaurant(User user, String filter) throws IOException {
+
+        SendMessage send = new SendMessage();
+
+        List<Restaurant> filterRests = filteringRestaurants(user, filter);
+
+        Restaurant rest = searchForTheNearestRestaurant(filterRests, user);
         List<String> adress = Arrays.asList(rest.getAddress().split(" "));
         StringBuilder preAdress = new StringBuilder("");
         for (String s : adress) {
             preAdress.append(s + "+");
         }
+
         send.setChatId(user.getTelegramChatId());
-        String url = "https://yandex.by/maps/?ll=" + longitude  + "%2C" + latitude +
-                "&mode=routes&rtext=" + latitude + "%2C" + longitude + "~" + preAdress + "&rtt=auto&ruri=~&z=17";
+        String url = "https://yandex.by/maps/?ll=" + user.getLongitude()  + "%2C" + user.getLatitude() +
+                "&mode=routes&rtext=" + user.getLatitude() + "%2C" + user.getLongitude() + "~" + preAdress + "&rtt=auto&ruri=~&z=17";
         send.setText(
                 "Название: " +  rest.getName() + "\n" +
                         "Cредний чек: " + rest.getMediumPrice() + "\n" +
@@ -123,6 +136,7 @@ public class TelegramAppService {
                         rest.getUrlImg() + "\n"  +
                         "путь находиться по ссылке: " + url
         );
+
         return send;
     }
 

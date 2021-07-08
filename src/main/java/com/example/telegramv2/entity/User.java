@@ -27,14 +27,6 @@ public class User {
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
     private List<Restaurant> restaurantList;
 
-    public User(int telegramChatId, double latitude, double longitude, int steps, int sum) {
-        this.telegramChatId = telegramChatId;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.steps = steps;
-        this.sum = sum;
-    }
-
     @Override
     public String toString() {
         return "User{" +

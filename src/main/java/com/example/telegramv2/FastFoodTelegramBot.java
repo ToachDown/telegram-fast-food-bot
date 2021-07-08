@@ -52,7 +52,7 @@ public class FastFoodTelegramBot extends TelegramLongPollingBot {
         try {
             switch (user.getSteps()) {
                 case 1: {
-                    send.setReplyMarkup(keyBoardService.startPosition())
+                    send.setReplyMarkup(keyBoardService.createBeginButtonGetLocation())
                         .setText("начнём?");
                     execute(send);
                     user.setSteps(2);
@@ -63,8 +63,8 @@ public class FastFoodTelegramBot extends TelegramLongPollingBot {
                         Location location = message.getLocation();
                         user.setLatitude(location.getLatitude());
                         user.setLongitude(location.getLongitude());
-                        user.setRestaurantList(telegramAppService.nearYour(user));
-                        send.setReplyMarkup(keyBoardService.startSearch())
+                        user.setRestaurantList(telegramAppService.findRestaurantNearYour(user));
+                        send.setReplyMarkup(keyBoardService.createSkipButton())
                                 .setText("Поиск мест...");
                         execute(send);
                         user.setSteps(3);
@@ -85,7 +85,7 @@ public class FastFoodTelegramBot extends TelegramLongPollingBot {
                 case 4: {
                     if(telegramAppService.isNumber(message.getText())) {
                         user.setSum(Integer.parseInt(message.getText()));
-                        ReplyKeyboardMarkup replyKeyboardMarkup = keyBoardService.CreateButton();
+                        ReplyKeyboardMarkup replyKeyboardMarkup = keyBoardService.CreateSelectionButtons();
                         send.setText("вы хотите покушать на " + user.getSum() + " BYN")
                             .setReplyMarkup(replyKeyboardMarkup);
                         execute(send);
@@ -105,7 +105,7 @@ public class FastFoodTelegramBot extends TelegramLongPollingBot {
                             case "паб":
                             case "кафе":
                             case "кофейня": {
-                                send = telegramAppService.filterNearRes(user, message.getText().toLowerCase(Locale.ROOT));
+                                send = telegramAppService.sendResultRestaurant(user, message.getText().toLowerCase(Locale.ROOT));
                                 execute(send);
                                 userRepo.save(telegramAppService.clearUser(user));
                                 break;
